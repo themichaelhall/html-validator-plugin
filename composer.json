@@ -18,6 +18,7 @@
   ],
   "require": {
     "php": ">=5.6",
+    "ext-curl": "*",
     "bluemvc/bluemvc-core": "dev-master"
   },
   "require-dev": {
