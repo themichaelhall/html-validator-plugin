@@ -1,6 +1,5 @@
 <?php
 
-
 namespace MichaelHall\HtmlValidatorPlugin\Tests\Helpers;
 
 use BlueMvc\Core\Controller;
