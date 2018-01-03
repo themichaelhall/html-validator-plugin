@@ -8,6 +8,7 @@ use BlueMvc\Core\Route;
 use BlueMvc\Fakes\FakeApplication;
 use BlueMvc\Fakes\FakeRequest;
 use BlueMvc\Fakes\FakeResponse;
+use DataTypes\FilePath;
 use MichaelHall\HtmlValidatorPlugin\HtmlValidatorPlugin;
 use MichaelHall\HtmlValidatorPlugin\Tests\Helpers\TestController;
 
@@ -62,7 +63,24 @@ class HtmlValidatorPluginTest extends \PHPUnit_Framework_TestCase
      */
     public function tearDown()
     {
+        $this->clearPluginCache();
         $this->myApplication = null;
+    }
+
+    /**
+     * Clears the plugin cache.
+     */
+    private function clearPluginCache()
+    {
+        $cacheDirectory = $this->myApplication->getTempPath()->withFilePath(FilePath::parse('michaelhall/html-validator-plugin/'));
+        foreach (scandir($cacheDirectory->__toString()) as $cacheFile) {
+            if ($cacheFile === '.' || $cacheFile === '..' || substr($cacheFile, -5) !== '.json') {
+                continue;
+            }
+
+            unlink($cacheDirectory->__toString() . $cacheFile);
+        }
+        rmdir($cacheDirectory->__toString());
     }
 
     /**

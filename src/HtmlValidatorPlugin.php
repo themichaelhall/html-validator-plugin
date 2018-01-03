@@ -12,6 +12,8 @@ use BlueMvc\Core\Http\StatusCode;
 use BlueMvc\Core\Interfaces\ApplicationInterface;
 use BlueMvc\Core\Interfaces\RequestInterface;
 use BlueMvc\Core\Interfaces\ResponseInterface;
+use DataTypes\FilePath;
+use DataTypes\Interfaces\FilePathInterface;
 
 /**
  * HTML validator plugin.
@@ -35,7 +37,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
     {
         parent::onPostRequest($application, $request, $response);
 
-        $validationResult = self::myValidate($response->getContent());
+        $validationResult = self::myValidate($application->getTempPath(), $response->getContent());
         if (count($validationResult) === 0) {
             return false;
         }
@@ -44,6 +46,54 @@ class HtmlValidatorPlugin extends AbstractPlugin
         $response->setStatusCode(new StatusCode(StatusCode::INTERNAL_SERVER_ERROR));
 
         return true;
+    }
+
+    /**
+     * Validates the content.
+     *
+     * @param FilePathInterface $tempDir The path to a temporary directory.
+     * @param string            $content The content.
+     *
+     * @return array The messages.
+     */
+    private static function myValidate(FilePathInterface $tempDir, $content)
+    {
+        $checksum = sha1($content);
+        $cacheFilename = self::myGetCacheFilename($tempDir, $checksum);
+
+        if (!file_exists($cacheFilename->__toString())) {
+            $result = self::myDoValidate($content);
+            file_put_contents($cacheFilename->__toString(), $result);
+        }
+
+        $result = file_get_contents($cacheFilename->__toString());
+
+        return json_decode($result, true)['messages'];
+    }
+
+    /**
+     * Does a validation via validator.w3.org POST API.
+     *
+     * @param string $content The content to validate.
+     *
+     * @return string The result as JSON.
+     */
+    private static function myDoValidate($content)
+    {
+        $curl = curl_init();
+
+        curl_setopt($curl, CURLOPT_URL, self::VALIDATOR_URL);
+        curl_setopt($curl, CURLOPT_USERAGENT, 'HtmlValidatorPlugin/1.0 (+https://github.com/themichaelhall/html-validator-plugin)');
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: text/html; charset=utf-8']); // fixme
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        $result = curl_exec($curl);
+
+        curl_close($curl);
+
+        return $result !== false ? $result : '{"messages":[]}';
     }
 
     /**
@@ -83,43 +133,21 @@ class HtmlValidatorPlugin extends AbstractPlugin
     }
 
     /**
-     * Validates the content.
+     * Returns the path to the cache file with the specified checksum.
      *
-     * @param string $content The content.
+     * @param FilePathInterface $tempDir  The path to a temporary directory.
+     * @param string            $checksum The checksum.
      *
-     * @return array The messages.
+     * @return FilePathInterface The path to the cache file.
      */
-    private static function myValidate($content)
+    private static function myGetCacheFilename(FilePathInterface $tempDir, $checksum)
     {
-        // fixme: cache result.
-        $result = self::myDoValidate($content);
+        $directory = $tempDir->withFilePath(FilePath::parse('michaelhall' . DIRECTORY_SEPARATOR . 'html-validator-plugin' . DIRECTORY_SEPARATOR));
+        if (!is_dir($directory->__toString())) {
+            mkdir($directory->__toString(), 0777, true);
+        }
 
-        return json_decode($result, true)['messages'];
-    }
-
-    /**
-     * Does a validation via validator.w3.org POST API.
-     *
-     * @param string $content The content to validate.
-     *
-     * @return string The result as JSON.
-     */
-    private static function myDoValidate($content)
-    {
-        $curl = curl_init();
-
-        curl_setopt($curl, CURLOPT_URL, self::VALIDATOR_URL);
-        curl_setopt($curl, CURLOPT_USERAGENT, 'HtmlValidatorPlugin/1.0 (+https://github.com/themichaelhall/html-validator-plugin)');
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: text/html; charset=utf-8']); // fixme
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        $result = curl_exec($curl);
-
-        curl_close($curl);
-
-        return $result !== false ? $result : '{"messages":[]}';
+        return $directory->withFilePath(FilePath::parse($checksum . '.json'));
     }
 
     /**
