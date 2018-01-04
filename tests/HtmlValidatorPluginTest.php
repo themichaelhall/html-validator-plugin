@@ -85,7 +85,20 @@ class HtmlValidatorPluginTest extends \PHPUnit_Framework_TestCase
         self::assertContains('<li>At line 1, column 34: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
     }
 
-    // fixme: Test empty content.
+    /**
+     * Test empty content.
+     */
+    public function testEmptyContent()
+    {
+        $request = new FakeRequest('/empty');
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
+        self::assertSame('ignored; empty-content', $response->getHeader('X-Html-Validator-Plugin'));
+        self::assertSame('', $response->getContent());
+    }
+
     // fixme: Test non-html content.
 
     /**

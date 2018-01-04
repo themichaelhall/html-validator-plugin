@@ -28,4 +28,14 @@ class TestController extends Controller
     {
         return '<!DOCTYPE html><html><head></head><body><p>An invalid page.</p></body>';
     }
+
+    /**
+     * An empty page.
+     *
+     * @return string The result.
+     */
+    public function emptyAction()
+    {
+        return '';
+    }
 }

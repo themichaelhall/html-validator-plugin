@@ -61,6 +61,12 @@ class HtmlValidatorPlugin extends AbstractPlugin
      */
     private static function myValidate(FilePathInterface $tempDir, $content, &$resultHeader = null)
     {
+        if (trim($content) === '') {
+            $resultHeader = 'ignored; empty-content';
+
+            return [];
+        }
+
         $checksum = sha1($content);
         $cacheFilename = self::myGetCacheFilename($tempDir, $checksum);
         $isCached = true;
