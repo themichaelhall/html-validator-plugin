@@ -37,7 +37,9 @@ class HtmlValidatorPlugin extends AbstractPlugin
     {
         parent::onPostRequest($application, $request, $response);
 
-        $validationResult = self::myValidate($application->getTempPath(), $response->getContent());
+        $validationResult = self::myValidate($application->getTempPath(), $response->getContent(), $resultHeader);
+        $response->setHeader('X-HtmlValidatorPlugin', $resultHeader);
+
         if (count($validationResult) === 0) {
             return false;
         }
@@ -51,24 +53,33 @@ class HtmlValidatorPlugin extends AbstractPlugin
     /**
      * Validates the content.
      *
-     * @param FilePathInterface $tempDir The path to a temporary directory.
-     * @param string            $content The content.
+     * @param FilePathInterface $tempDir      The path to a temporary directory.
+     * @param string            $content      The content.
+     * @param string|null       $resultHeader The header describing the result.
      *
      * @return array The messages.
      */
-    private static function myValidate(FilePathInterface $tempDir, $content)
+    private static function myValidate(FilePathInterface $tempDir, $content, &$resultHeader = null)
     {
         $checksum = sha1($content);
         $cacheFilename = self::myGetCacheFilename($tempDir, $checksum);
+        $isCached = true;
 
         if (!file_exists($cacheFilename->__toString())) {
+            $isCached = false;
             $result = self::myDoValidate($content);
             file_put_contents($cacheFilename->__toString(), $result);
         }
 
-        $result = file_get_contents($cacheFilename->__toString());
+        $jsonResult = file_get_contents($cacheFilename->__toString());
+        $result = json_decode($jsonResult, true)['messages'];
 
-        return json_decode($result, true)['messages'];
+        $resultHeader = count($result) === 0 ? 'Success' : 'Fail';
+        if ($isCached) {
+            $resultHeader .= '; Cached';
+        }
+
+        return $result;
     }
 
     /**
