@@ -38,7 +38,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
         parent::onPostRequest($application, $request, $response);
 
         $validationResult = self::myValidate($application->getTempPath(), $response->getContent(), $resultHeader);
-        $response->setHeader('X-HtmlValidatorPlugin', $resultHeader);
+        $response->setHeader('X-Html-Validator-Plugin', $resultHeader);
 
         if (count($validationResult) === 0) {
             return false;
@@ -74,9 +74,9 @@ class HtmlValidatorPlugin extends AbstractPlugin
         $jsonResult = file_get_contents($cacheFilename->__toString());
         $result = json_decode($jsonResult, true)['messages'];
 
-        $resultHeader = count($result) === 0 ? 'Success' : 'Fail';
+        $resultHeader = count($result) === 0 ? 'success' : 'fail';
         if ($isCached) {
-            $resultHeader .= '; Cached';
+            $resultHeader .= '; from-cache';
         }
 
         return $result;
