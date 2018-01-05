@@ -99,7 +99,19 @@ class HtmlValidatorPluginTest extends \PHPUnit_Framework_TestCase
         self::assertSame('', $response->getContent());
     }
 
-    // fixme: Test non-html content.
+    /**
+     * Test not-html content.
+     */
+    public function testNotHtmlContent()
+    {
+        $request = new FakeRequest('/notHtml');
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
+        self::assertSame('ignored; not-html', $response->getHeader('X-Html-Validator-Plugin'));
+        self::assertSame('{"Foo": "Bar"}', $response->getContent());
+    }
 
     /**
      * Set up.

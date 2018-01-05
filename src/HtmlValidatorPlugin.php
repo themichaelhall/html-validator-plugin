@@ -37,7 +37,9 @@ class HtmlValidatorPlugin extends AbstractPlugin
     {
         parent::onPostRequest($application, $request, $response);
 
-        $validationResult = self::myValidate($application->getTempPath(), $response->getContent(), $resultHeader);
+        $contentType = $response->getHeader('Content-Type') ?: 'text/html; charset=utf-8';
+
+        $validationResult = self::myValidate($application->getTempPath(), $contentType, $response->getContent(), $resultHeader);
         $response->setHeader('X-Html-Validator-Plugin', $resultHeader);
 
         if (count($validationResult) === 0) {
@@ -54,15 +56,22 @@ class HtmlValidatorPlugin extends AbstractPlugin
      * Validates the content.
      *
      * @param FilePathInterface $tempDir      The path to a temporary directory.
+     * @param string            $contentType  The content type.
      * @param string            $content      The content.
      * @param string|null       $resultHeader The header describing the result.
      *
      * @return array The messages.
      */
-    private static function myValidate(FilePathInterface $tempDir, $content, &$resultHeader = null)
+    private static function myValidate(FilePathInterface $tempDir, $contentType, $content, &$resultHeader = null)
     {
         if (trim($content) === '') {
             $resultHeader = 'ignored; empty-content';
+
+            return [];
+        }
+
+        if (!self::myIsHtmlContentType($contentType)) {
+            $resultHeader = 'ignored; not-html';
 
             return [];
         }
@@ -73,7 +82,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
 
         if (!file_exists($cacheFilename->__toString())) {
             $isCached = false;
-            $result = self::myDoValidate($content);
+            $result = self::myDoValidate($contentType, $content);
             file_put_contents($cacheFilename->__toString(), $result);
         }
 
@@ -91,11 +100,12 @@ class HtmlValidatorPlugin extends AbstractPlugin
     /**
      * Does a validation via validator.w3.org POST API.
      *
-     * @param string $content The content to validate.
+     * @param string $contentType The content type.
+     * @param string $content     The content to validate.
      *
      * @return string The result as JSON.
      */
-    private static function myDoValidate($content)
+    private static function myDoValidate($contentType, $content)
     {
         $curl = curl_init();
 
@@ -103,7 +113,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
         curl_setopt($curl, CURLOPT_USERAGENT, 'HtmlValidatorPlugin/1.0 (+https://github.com/themichaelhall/html-validator-plugin)');
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: text/html; charset=utf-8']); // fixme
+        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: ' . $contentType]);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
         $result = curl_exec($curl);
@@ -165,6 +175,21 @@ class HtmlValidatorPlugin extends AbstractPlugin
         }
 
         return $directory->withFilePath(FilePath::parse($checksum . '.json'));
+    }
+
+    /**
+     * Checks if the specified content type is html.
+     *
+     * @param string $contentType The content type.
+     *
+     * @return bool True if the specified content type
+     */
+    private static function myIsHtmlContentType($contentType)
+    {
+        $contentTypeParts = explode(';', $contentType, 2);
+        $contentType = strtolower(trim($contentTypeParts[0]));
+
+        return in_array($contentType, ['text/html']);
     }
 
     /**

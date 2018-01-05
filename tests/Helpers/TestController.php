@@ -38,4 +38,16 @@ class TestController extends Controller
     {
         return '';
     }
+
+    /**
+     * A page with content that is not html.
+     *
+     * @return string The result.
+     */
+    public function notHtmlAction()
+    {
+        $this->getResponse()->setHeader('Content-Type', 'application/json');
+
+        return '{"Foo": "Bar"}';
+    }
 }
