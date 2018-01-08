@@ -23,7 +23,7 @@
   },
   "require-dev": {
     "bluemvc/bluemvc-fakes": "dev-master",
-    "phpunit/phpunit": "~5.0"
+    "phpunit/phpunit": "~5.5||~6.0"
   },
   "autoload": {
     "psr-4": {

@@ -11,11 +11,12 @@ use BlueMvc\Fakes\FakeResponse;
 use DataTypes\FilePath;
 use MichaelHall\HtmlValidatorPlugin\HtmlValidatorPlugin;
 use MichaelHall\HtmlValidatorPlugin\Tests\Helpers\TestController;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test HtmlValidatorPlugin class.
  */
-class HtmlValidatorPluginTest extends \PHPUnit_Framework_TestCase
+class HtmlValidatorPluginTest extends TestCase
 {
     /**
      * Test not cached valid content.
