@@ -31,7 +31,7 @@ class HtmlValidatorPluginTest extends TestCase
 
         self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
         self::assertSame('success', $response->getHeader('X-Html-Validator-Plugin'));
-        self::assertSame('<!DOCTYPE html><html><head><title>A valid test page</title></head></html>', $response->getContent());
+        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
     }
 
     /**
@@ -47,7 +47,7 @@ class HtmlValidatorPluginTest extends TestCase
 
         self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
         self::assertSame('success; from-cache', $response->getHeader('X-Html-Validator-Plugin'));
-        self::assertSame('<!DOCTYPE html><html><head><title>A valid test page</title></head></html>', $response->getContent());
+        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
     }
 
     /**
@@ -65,7 +65,8 @@ class HtmlValidatorPluginTest extends TestCase
         self::assertSame('fail', $response->getHeader('X-Html-Validator-Plugin'));
         self::assertNotContains('<!DOCTYPE html><html><head></head><body><p>An invalid page.</p></body>', $response->getContent());
         self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
-        self::assertContains('<li>At line 1, column 34: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
+        self::assertContains('<li>At line 4, column 7: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
+        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html&gt;<br />  3 &lt;head&gt;<br />  4 &lt;/head&gt;&lt;body&gt;&lt;p&gt;An invalid page.&lt;/p&gt;<br />  5 <br />  6 &lt;/body&gt;<br /></pre>', $response->getContent());
     }
 
     /**
@@ -83,7 +84,8 @@ class HtmlValidatorPluginTest extends TestCase
         self::assertSame('fail; from-cache', $response->getHeader('X-Html-Validator-Plugin'));
         self::assertNotContains('<!DOCTYPE html><html><head></head><body><p>An invalid page.</p></body>', $response->getContent());
         self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
-        self::assertContains('<li>At line 1, column 34: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
+        self::assertContains('<li>At line 4, column 7: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
+        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html&gt;<br />  3 &lt;head&gt;<br />  4 &lt;/head&gt;&lt;body&gt;&lt;p&gt;An invalid page.&lt;/p&gt;<br />  5 <br />  6 &lt;/body&gt;<br /></pre>', $response->getContent());
     }
 
     /**

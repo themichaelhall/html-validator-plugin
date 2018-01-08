@@ -16,7 +16,7 @@ class TestController extends Controller
      */
     public function validAction()
     {
-        return '<!DOCTYPE html><html><head><title>A valid test page</title></head></html>';
+        return "<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>";
     }
 
     /**
@@ -26,7 +26,7 @@ class TestController extends Controller
      */
     public function invalidAction()
     {
-        return '<!DOCTYPE html><html><head></head><body><p>An invalid page.</p></body>';
+        return "<!DOCTYPE html>\r\n<html>\r<head>\n</head><body><p>An invalid page.</p>\n\n</body>";
     }
 
     /**

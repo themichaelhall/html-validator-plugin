@@ -38,15 +38,16 @@ class HtmlValidatorPlugin extends AbstractPlugin
         parent::onPostRequest($application, $request, $response);
 
         $contentType = $response->getHeader('Content-Type') ?: 'text/html; charset=utf-8';
+        $content = $response->getContent();
 
-        $validationResult = self::myValidate($application->getTempPath(), $contentType, $response->getContent(), $resultHeader);
+        $validationResult = self::myValidate($application->getTempPath(), $contentType, $content, $resultHeader);
         $response->setHeader('X-Html-Validator-Plugin', $resultHeader);
 
         if (count($validationResult) === 0) {
             return false;
         }
 
-        $response->setContent(self::myCreateErrorPageContent($validationResult));
+        $response->setContent(self::myCreateErrorPageContent($validationResult, $content));
         $response->setStatusCode(new StatusCode(StatusCode::INTERNAL_SERVER_ERROR));
 
         return true;
@@ -126,22 +127,14 @@ class HtmlValidatorPlugin extends AbstractPlugin
     /**
      * Creates error page content from validation result.
      *
-     * @param array $validationResult The validation result.
+     * @param array  $validationResult The validation result.
+     * @param string $content          The content.
      *
      * @return string The error page content.
      */
-    private static function myCreateErrorPageContent(array $validationResult)
+    private static function myCreateErrorPageContent(array $validationResult, $content)
     {
-        $result =
-            '<!DOCTYPE html>' .
-            '<html>' .
-            '<head>' .
-            '<meta charset="utf-8">' .
-            '<title>HTML validation failed</title>' .
-            '</head>' .
-            '<body>' .
-            '<h1>HTML validation failed</h1>' .
-            '<ul>';
+        $result = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>HTML validation failed</title></head><body><h1>HTML validation failed</h1><ul>';
 
         foreach ($validationResult as $validationItem) {
             $line = isset($validationItem['lastLine']) ? $validationItem['lastLine'] : 0;
@@ -151,10 +144,14 @@ class HtmlValidatorPlugin extends AbstractPlugin
             $result .= '<li>At line ' . htmlentities($line) . ', column ' . htmlentities($column) . ': ' . htmlentities($message) . '</li>';
         }
 
-        $result .=
-            '</ul>' .
-            '</body>' .
-            '</html>';
+        $result .= '</ul><h2>Source</h2><pre>';
+
+        $line = 1;
+        foreach (preg_split("/\r\n|\n|\r/", $content) as $contentLine) {
+            $result .= str_pad($line++, 3, ' ', STR_PAD_LEFT) . ' ' . htmlentities($contentLine) . '<br />';
+        }
+
+        $result .= '</pre></body></html>';
 
         return $result;
     }
