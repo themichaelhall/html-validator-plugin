@@ -137,11 +137,12 @@ class HtmlValidatorPlugin extends AbstractPlugin
         $result = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>HTML validation failed</title></head><body><h1>HTML validation failed</h1><ul>';
 
         foreach ($validationResult as $validationItem) {
-            $line = isset($validationItem['lastLine']) ? $validationItem['lastLine'] : 0;
-            $column = isset($validationItem['lastColumn']) ? $validationItem['lastColumn'] : 0;
+            $type = $validationItem['type'];
+            $firstLine = isset($validationItem['firstLine']) ? $validationItem['firstLine'] : 0;
+            $lastLine = isset($validationItem['lastLine']) ? $validationItem['lastLine'] : 0;
             $message = isset($validationItem['message']) ? $validationItem['message'] : '';
 
-            $result .= '<li>At line ' . htmlentities($line) . ', column ' . htmlentities($column) . ': ' . htmlentities($message) . '</li>';
+            $result .= '<li>' . htmlentities($type) . ': line ' . htmlentities($firstLine !== 0 ? $firstLine . '-' . $lastLine : $lastLine) . ': ' . htmlentities($message) . '</li>';
         }
 
         $result .= '</ul><h2>Source</h2><pre>';
