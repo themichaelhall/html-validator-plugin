@@ -117,6 +117,65 @@ class HtmlValidatorPluginTest extends TestCase
     }
 
     /**
+     * Test with ignored paths.
+     *
+     * @dataProvider withIgnoredPathsDataProvider
+     *
+     * @param string $requestPath                        The request path.
+     * @param string $expectedXHtmlValidatorPluginHeader The expected X-Html-Validator-Plugin header.
+     */
+    public function testWithIgnoredPaths($requestPath, $expectedXHtmlValidatorPluginHeader)
+    {
+        /** @var HtmlValidatorPlugin $plugin */
+        $plugin = $this->myApplication->getPlugins()[0];
+        $plugin->addIgnorePath('foo/');
+        $plugin->addIgnorePath('/bar/baz');
+        $plugin->addIgnorePath('bar/baz/foo/');
+
+        $request = new FakeRequest($requestPath);
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame($expectedXHtmlValidatorPluginHeader, $response->getHeader('X-Html-Validator-Plugin'));
+    }
+
+    /**
+     * Data provider for ignored paths test.
+     *
+     * @return array The data.
+     */
+    public function withIgnoredPathsDataProvider()
+    {
+        return [
+            ['/foo', 'ignored; empty-content'],
+            ['/foo/', 'ignored; ignore-path=/foo/'],
+            ['/foo/bar', 'ignored; ignore-path=/foo/'],
+            ['/foo/bar/', 'ignored; ignore-path=/foo/'],
+            ['/bar', 'ignored; empty-content'],
+            ['/bar/', 'ignored; empty-content'],
+            ['/bar/foo', 'ignored; empty-content'],
+            ['/bar/foo/', 'ignored; empty-content'],
+            ['/bar/baz', 'ignored; ignore-path=/bar/baz'],
+            ['/bar/baz/', 'ignored; empty-content'],
+            ['/bar/baz/foo', 'ignored; empty-content'],
+            ['/bar/baz/foo/', 'ignored; ignore-path=/bar/baz/foo/'],
+            ['/bar/baz/foo/bar', 'ignored; ignore-path=/bar/baz/foo/'],
+        ];
+    }
+
+    /**
+     * Test addIgnorePath with invalid parameter type.
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage The $ignorePath parameter is not a string.
+     */
+    public function testAddIgnorePathWithInvalidParameterType()
+    {
+        $plugin = new HtmlValidatorPlugin();
+        $plugin->addIgnorePath(true);
+    }
+
+    /**
      * Set up.
      */
     public function setUp()

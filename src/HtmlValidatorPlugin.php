@@ -14,6 +14,8 @@ use BlueMvc\Core\Interfaces\RequestInterface;
 use BlueMvc\Core\Interfaces\ResponseInterface;
 use DataTypes\FilePath;
 use DataTypes\Interfaces\FilePathInterface;
+use DataTypes\Interfaces\UrlPathInterface;
+use DataTypes\UrlPath;
 
 /**
  * HTML validator plugin.
@@ -22,6 +24,26 @@ use DataTypes\Interfaces\FilePathInterface;
  */
 class HtmlValidatorPlugin extends AbstractPlugin
 {
+    /**
+     * Adds a path to ignore for validation.
+     *
+     * If the path is a directory, the whole directory will be ignored. If the path is a file, only the file will be ignored.
+     *
+     * @since 1.0.0
+     *
+     * @param string $ignorePath The path to ignore.
+     *
+     * @throws \InvalidArgumentException If the $ignorePath parameter is not a string.
+     */
+    public function addIgnorePath($ignorePath)
+    {
+        if (!is_string($ignorePath)) {
+            throw new \InvalidArgumentException('The $ignorePath parameter is not a string.');
+        }
+
+        $this->myIgnorePaths[] = UrlPath::parse('/' . $ignorePath);
+    }
+
     /**
      * Called after a request is processed.
      *
@@ -40,7 +62,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
         $contentType = $response->getHeader('Content-Type') ?: 'text/html; charset=utf-8';
         $content = $response->getContent();
 
-        $validationResult = self::myValidate($application->getTempPath(), $contentType, $content, $resultHeader);
+        $validationResult = $this->myValidate($request->getUrl()->getPath(), $application->getTempPath(), $contentType, $content, $resultHeader);
         $response->setHeader('X-Html-Validator-Plugin', $resultHeader);
 
         if (count($validationResult) === 0) {
@@ -56,6 +78,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
     /**
      * Validates the content.
      *
+     * @param UrlPathInterface  $requestPath  The request path.
      * @param FilePathInterface $tempDir      The path to a temporary directory.
      * @param string            $contentType  The content type.
      * @param string            $content      The content.
@@ -63,8 +86,14 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return array The messages.
      */
-    private static function myValidate(FilePathInterface $tempDir, $contentType, $content, &$resultHeader = null)
+    private function myValidate(UrlPathInterface $requestPath, FilePathInterface $tempDir, $contentType, $content, &$resultHeader = null)
     {
+        if ($this->myIsIgnoredPath($requestPath, $ignorePath)) {
+            $resultHeader = 'ignored; ignore-path=' . $ignorePath;
+
+            return [];
+        }
+
         if (trim($content) === '') {
             $resultHeader = 'ignored; empty-content';
 
@@ -96,6 +125,31 @@ class HtmlValidatorPlugin extends AbstractPlugin
         }
 
         return $result;
+    }
+
+    /**
+     * Checks if the request path is an ignored path.
+     *
+     * @param UrlPathInterface      $requestPath The request path.
+     * @param UrlPathInterface|null $ignorePath  If path was ignored, the ignored path, otherwise undefined.
+     *
+     * @return bool True if request path is an ignored path, false otherwise.
+     */
+    private function myIsIgnoredPath(UrlPathInterface $requestPath, UrlPathInterface &$ignorePath = null)
+    {
+        foreach ($this->myIgnorePaths as $ignorePath) {
+            if ($ignorePath->isDirectory()) {
+                $isMatch = substr($requestPath->__toString(), 0, strlen($ignorePath->__toString())) === $ignorePath->__toString();
+            } else {
+                $isMatch = $requestPath->equals($ignorePath);
+            }
+
+            if ($isMatch) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -189,6 +243,11 @@ class HtmlValidatorPlugin extends AbstractPlugin
 
         return in_array($contentType, ['text/html']);
     }
+
+    /**
+     * @var UrlPathInterface[] My ignore paths.
+     */
+    private $myIgnorePaths = [];
 
     /**
      * My validator url.
