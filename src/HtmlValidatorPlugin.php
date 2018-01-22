@@ -110,7 +110,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
         $cacheFilename = self::myGetCacheFilename($tempDir, $checksum);
         $isCached = true;
 
-        if (!file_exists($cacheFilename->__toString())) {
+        if (!file_exists($cacheFilename->__toString()) || filemtime($cacheFilename->__toString()) <= time() - 86400) {
             $isCached = false;
             $result = self::myDoValidate($contentType, $content);
             file_put_contents($cacheFilename->__toString(), $result);
