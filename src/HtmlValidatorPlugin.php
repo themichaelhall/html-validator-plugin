@@ -25,6 +25,24 @@ use DataTypes\UrlPath;
 class HtmlValidatorPlugin extends AbstractPlugin
 {
     /**
+     * HtmlValidatorPlugin constructor.
+     *
+     * @since 1.0.0
+     *
+     * @param string $validatorUrl The validator url.
+     *
+     * @throws \InvalidArgumentException If the $validatorUrl parameter is not a string.
+     */
+    public function __construct($validatorUrl = self::DEFAULT_VALIDATOR_URL)
+    {
+        if (!is_string($validatorUrl)) {
+            throw new \InvalidArgumentException('The $validatorUrl parameter is not a string.');
+        }
+
+        $this->myValidatorUrl = $validatorUrl;
+    }
+
+    /**
      * Adds a path to ignore for validation.
      *
      * If the path is a directory, the whole directory will be ignored. If the path is a file, only the file will be ignored.
@@ -112,7 +130,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
 
         if (!file_exists($cacheFilename->__toString()) || filemtime($cacheFilename->__toString()) <= time() - 86400) {
             $isCached = false;
-            $result = self::myDoValidate($contentType, $content);
+            $result = $this->myDoValidate($contentType, $content);
             file_put_contents($cacheFilename->__toString(), $result);
         }
 
@@ -160,11 +178,11 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return string The result as JSON.
      */
-    private static function myDoValidate($contentType, $content)
+    private function myDoValidate($contentType, $content)
     {
         $curl = curl_init();
 
-        curl_setopt($curl, CURLOPT_URL, self::VALIDATOR_URL);
+        curl_setopt($curl, CURLOPT_URL, $this->myValidatorUrl);
         curl_setopt($curl, CURLOPT_USERAGENT, 'HtmlValidatorPlugin/1.0 (+https://github.com/themichaelhall/html-validator-plugin)');
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
@@ -175,7 +193,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
 
         curl_close($curl);
 
-        return $result !== false ? $result : '{"messages":[]}';
+        return $result !== false ? $result : '{"messages":[{"type":"error","message":"Error contacting validator."}]}';
     }
 
     /**
@@ -245,6 +263,11 @@ class HtmlValidatorPlugin extends AbstractPlugin
     }
 
     /**
+     * @var string My validator url.
+     */
+    private $myValidatorUrl;
+
+    /**
      * @var UrlPathInterface[] My ignore paths.
      */
     private $myIgnorePaths = [];
@@ -254,5 +277,5 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @since 1.0.0
      */
-    const VALIDATOR_URL = 'https://validator.w3.org/nu/?out=json';
+    const DEFAULT_VALIDATOR_URL = 'https://validator.w3.org/nu/?out=json';
 }

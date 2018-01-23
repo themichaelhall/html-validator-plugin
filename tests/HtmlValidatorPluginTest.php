@@ -25,6 +25,7 @@ class HtmlValidatorPluginTest extends TestCase
     {
         $this->clearPluginCache();
 
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/valid');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -41,6 +42,7 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function testCachedValidContent()
     {
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/valid');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -61,6 +63,7 @@ class HtmlValidatorPluginTest extends TestCase
         $cacheFile = $this->myApplication->getTempPath()->withFilePath(FilePath::parse('michaelhall/html-validator-plugin/42c3e1422d1ff596bd57ccafe0f0161d4057fd29.json'));
         touch($cacheFile->__toString(), time() - 86401);
 
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/valid');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -77,6 +80,7 @@ class HtmlValidatorPluginTest extends TestCase
     {
         $this->clearPluginCache();
 
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/invalid');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -96,6 +100,7 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function testCachedInvalidContent()
     {
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/invalid');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -113,6 +118,7 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function testEmptyContent()
     {
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/empty');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -127,6 +133,7 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function testNotHtmlContent()
     {
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
         $request = new FakeRequest('/notHtml');
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -146,12 +153,12 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function testWithIgnoredPaths($requestPath, $expectedXHtmlValidatorPluginHeader)
     {
-        /** @var HtmlValidatorPlugin $plugin */
-        $plugin = $this->myApplication->getPlugins()[0];
-        $plugin->addIgnorePath('foo/');
-        $plugin->addIgnorePath('/bar/baz');
-        $plugin->addIgnorePath('bar/baz/foo/');
+        $htmlValidatorPlugin = new HtmlValidatorPlugin();
+        $htmlValidatorPlugin->addIgnorePath('foo/');
+        $htmlValidatorPlugin->addIgnorePath('/bar/baz');
+        $htmlValidatorPlugin->addIgnorePath('bar/baz/foo/');
 
+        $this->myApplication->addPlugin($htmlValidatorPlugin);
         $request = new FakeRequest($requestPath);
         $response = new FakeResponse();
         $this->myApplication->run($request, $response);
@@ -196,13 +203,43 @@ class HtmlValidatorPluginTest extends TestCase
     }
 
     /**
+     * Test with failed result from validator.
+     */
+    public function testWithFailedResultFromValidator()
+    {
+        $this->clearPluginCache();
+
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin('http://localhost:123/'));
+        $request = new FakeRequest('/valid');
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode()->getCode());
+        self::assertSame('fail', $response->getHeader('X-Html-Validator-Plugin'));
+        self::assertNotContains("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
+        self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
+        self::assertContains('<li>error: line 0: Error contacting validator.</li>', $response->getContent());
+        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html&gt;<br />  3 &lt;head&gt;<br />  4 &lt;title&gt;A valid test page&lt;/title&gt;&lt;/head&gt;<br />  5 <br />  6 &lt;/html&gt;<br /></pre>', $response->getContent());
+    }
+
+    /**
+     * Test constructor with invalid parameter type.
+     *
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage The $validatorUrl parameter is not a string.
+     */
+    public function testConstructorWithInvalidParameterType()
+    {
+        new HtmlValidatorPlugin(100);
+    }
+
+    /**
      * Set up.
      */
     public function setUp()
     {
         $this->myApplication = new FakeApplication();
         $this->myApplication->addRoute(new Route('', TestController::class));
-        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
     }
 
     /**
