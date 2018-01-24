@@ -63,6 +63,18 @@ class HtmlValidatorPlugin extends AbstractPlugin
     }
 
     /**
+     * Enables plugin to run, even if not in debug mode.
+     *
+     * Note that it is not recommended to run this plugin in live code!
+     *
+     * @since 1.0.0
+     */
+    public function enableInReleaseMode()
+    {
+        $this->myEnableInReleaseMode = true;
+    }
+
+    /**
      * Called after a request is processed.
      *
      * @since 1.0.0
@@ -76,6 +88,10 @@ class HtmlValidatorPlugin extends AbstractPlugin
     public function onPostRequest(ApplicationInterface $application, RequestInterface $request, ResponseInterface $response)
     {
         parent::onPostRequest($application, $request, $response);
+
+        if (!$application->isDebug() && !$this->myEnableInReleaseMode) {
+            return false;
+        }
 
         $contentType = $response->getHeader('Content-Type') ?: 'text/html; charset=utf-8';
         $content = $response->getContent();
@@ -271,6 +287,11 @@ class HtmlValidatorPlugin extends AbstractPlugin
      * @var UrlPathInterface[] My ignore paths.
      */
     private $myIgnorePaths = [];
+
+    /**
+     * @var bool If true always enabled, if false only enable in debug mode.
+     */
+    private $myEnableInReleaseMode = false;
 
     /**
      * My validator url.

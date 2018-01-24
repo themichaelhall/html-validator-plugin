@@ -3,7 +3,6 @@
 namespace MichaelHall\HtmlValidatorPlugin\Tests;
 
 use BlueMvc\Core\Http\StatusCode;
-use BlueMvc\Core\Interfaces\ApplicationInterface;
 use BlueMvc\Core\Route;
 use BlueMvc\Fakes\FakeApplication;
 use BlueMvc\Fakes\FakeRequest;
@@ -234,11 +233,50 @@ class HtmlValidatorPluginTest extends TestCase
     }
 
     /**
+     * Test invalid content in release mode.
+     */
+    public function testInvalidContentInReleaseMode()
+    {
+        $this->myApplication->setDebug(false);
+        $this->myApplication->addPlugin(new HtmlValidatorPlugin());
+        $request = new FakeRequest('/invalid');
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
+        self::assertNull($response->getHeader('X-Html-Validator-Plugin'));
+        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n</head><body><p>An invalid page.</p>\n\n</body>", $response->getContent());
+    }
+
+    /**
+     * Test invalid content in release mode with enable in release mode set.
+     */
+    public function testInvalidContentInReleaseModeWithEnableInReleaseModeSet()
+    {
+        $htmlValidatorPlugin = new HtmlValidatorPlugin();
+        $htmlValidatorPlugin->enableInReleaseMode();
+
+        $this->myApplication->setDebug(false);
+        $this->myApplication->addPlugin($htmlValidatorPlugin);
+        $request = new FakeRequest('/invalid');
+        $response = new FakeResponse();
+        $this->myApplication->run($request, $response);
+
+        self::assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode()->getCode());
+        self::assertContains('fail', $response->getHeader('X-Html-Validator-Plugin'));
+        self::assertNotContains('<p>An invalid page.</p>', $response->getContent());
+        self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
+        self::assertContains('<li>error: line 4: Element &ldquo;head&rdquo; is missing a required instance of child element &ldquo;title&rdquo;.</li>', $response->getContent());
+        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html&gt;<br />  3 &lt;head&gt;<br />  4 &lt;/head&gt;&lt;body&gt;&lt;p&gt;An invalid page.&lt;/p&gt;<br />  5 <br />  6 &lt;/body&gt;<br /></pre>', $response->getContent());
+    }
+
+    /**
      * Set up.
      */
     public function setUp()
     {
         $this->myApplication = new FakeApplication();
+        $this->myApplication->setDebug(true);
         $this->myApplication->addRoute(new Route('', TestController::class));
     }
 
@@ -271,7 +309,7 @@ class HtmlValidatorPluginTest extends TestCase
     }
 
     /**
-     * @var ApplicationInterface My application.
+     * @var FakeApplication My application.
      */
     private $myApplication;
 }
