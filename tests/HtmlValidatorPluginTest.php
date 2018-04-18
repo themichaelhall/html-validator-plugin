@@ -31,7 +31,7 @@ class HtmlValidatorPluginTest extends TestCase
 
         self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
         self::assertSame('success', $response->getHeader('X-Html-Validator-Plugin'));
-        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
+        self::assertSame("<!DOCTYPE html>\r\n<html lang=\"en\">\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
     }
 
     /**
@@ -48,7 +48,7 @@ class HtmlValidatorPluginTest extends TestCase
 
         self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
         self::assertSame('success; from-cache', $response->getHeader('X-Html-Validator-Plugin'));
-        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
+        self::assertSame("<!DOCTYPE html>\r\n<html lang=\"en\">\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
     }
 
     /**
@@ -59,7 +59,7 @@ class HtmlValidatorPluginTest extends TestCase
     public function testExpiredCachedValidContent()
     {
         // Make the cached result old.
-        $cacheFile = $this->myApplication->getTempPath()->withFilePath(FilePath::parse('michaelhall/html-validator-plugin/42c3e1422d1ff596bd57ccafe0f0161d4057fd29.json'));
+        $cacheFile = $this->myApplication->getTempPath()->withFilePath(FilePath::parse('michaelhall/html-validator-plugin/cce8c0eb532e3346f352c7330b92f3baa186d829.json'));
         touch($cacheFile->__toString(), time() - 86401);
 
         $this->myApplication->addPlugin(new HtmlValidatorPlugin());
@@ -69,7 +69,7 @@ class HtmlValidatorPluginTest extends TestCase
 
         self::assertSame(StatusCode::OK, $response->getStatusCode()->getCode());
         self::assertSame('success', $response->getHeader('X-Html-Validator-Plugin'));
-        self::assertSame("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
+        self::assertSame("<!DOCTYPE html>\r\n<html lang=\"en\">\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
     }
 
     /**
@@ -218,7 +218,7 @@ class HtmlValidatorPluginTest extends TestCase
         self::assertNotContains("<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>", $response->getContent());
         self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
         self::assertContains('<li>error: line 0: Error contacting validator.</li>', $response->getContent());
-        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html&gt;<br />  3 &lt;head&gt;<br />  4 &lt;title&gt;A valid test page&lt;/title&gt;&lt;/head&gt;<br />  5 <br />  6 &lt;/html&gt;<br /></pre>', $response->getContent());
+        self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html lang=&quot;en&quot;&gt;<br />  3 &lt;head&gt;<br />  4 &lt;title&gt;A valid test page&lt;/title&gt;&lt;/head&gt;<br />  5 <br />  6 &lt;/html&gt;<br /></pre>', $response->getContent());
     }
 
     /**
