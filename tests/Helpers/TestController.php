@@ -16,7 +16,7 @@ class TestController extends Controller
      */
     public function validAction()
     {
-        return "<!DOCTYPE html>\r\n<html>\r<head>\n<title>A valid test page</title></head>\n\n</html>";
+        return "<!DOCTYPE html>\r\n<html lang=\"en\">\r<head>\n<title>A valid test page</title></head>\n\n</html>";
     }
 
     /**
