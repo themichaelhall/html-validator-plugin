@@ -1,4 +1,5 @@
 ## Unreleased
+- Updated PHP requirement to 7.1.
 
 ## [1.0.1] - 2018-04-18
 - Minor tests adjustments. No source code changes.
