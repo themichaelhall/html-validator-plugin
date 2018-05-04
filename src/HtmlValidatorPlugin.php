@@ -4,6 +4,7 @@
  *
  * Read more at https://github.com/themichaelhall/html-validator-plugin
  */
+declare(strict_types=1);
 
 namespace MichaelHall\HtmlValidatorPlugin;
 
@@ -30,15 +31,9 @@ class HtmlValidatorPlugin extends AbstractPlugin
      * @since 1.0.0
      *
      * @param string $validatorUrl The validator url.
-     *
-     * @throws \InvalidArgumentException If the $validatorUrl parameter is not a string.
      */
-    public function __construct($validatorUrl = self::DEFAULT_VALIDATOR_URL)
+    public function __construct(string $validatorUrl = self::DEFAULT_VALIDATOR_URL)
     {
-        if (!is_string($validatorUrl)) {
-            throw new \InvalidArgumentException('The $validatorUrl parameter is not a string.');
-        }
-
         $this->validatorUrl = $validatorUrl;
     }
 
@@ -50,15 +45,9 @@ class HtmlValidatorPlugin extends AbstractPlugin
      * @since 1.0.0
      *
      * @param string $ignorePath The path to ignore.
-     *
-     * @throws \InvalidArgumentException If the $ignorePath parameter is not a string.
      */
-    public function addIgnorePath($ignorePath)
+    public function addIgnorePath(string $ignorePath): void
     {
-        if (!is_string($ignorePath)) {
-            throw new \InvalidArgumentException('The $ignorePath parameter is not a string.');
-        }
-
         $this->ignorePaths[] = UrlPath::parse('/' . $ignorePath);
     }
 
@@ -69,7 +58,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @since 1.0.0
      */
-    public function enableInReleaseMode()
+    public function enableInReleaseMode(): void
     {
         $this->enableInReleaseMode = true;
     }
@@ -117,7 +106,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return array The messages.
      */
-    private function validate(ApplicationInterface $application, RequestInterface $request, ResponseInterface $response, &$resultHeader = null)
+    private function validate(ApplicationInterface $application, RequestInterface $request, ResponseInterface $response, ?string &$resultHeader = null): array
     {
         $content = $response->getContent();
         $contentType = $response->getHeader('Content-Type') ?: 'text/html; charset=utf-8';
@@ -159,7 +148,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return bool True if validation should be ignored, false otherwise.
      */
-    private function shouldIgnore(UrlPathInterface $path, $content, $contentType, &$reason = null)
+    private function shouldIgnore(UrlPathInterface $path, string $content, string $contentType, ?string &$reason = null): bool
     {
         if ($this->isIgnoredPath($path, $ignorePath)) {
             $reason = 'ignore-path=' . $ignorePath;
@@ -191,7 +180,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return bool True if request path is an ignored path, false otherwise.
      */
-    private function isIgnoredPath(UrlPathInterface $requestPath, UrlPathInterface &$ignorePath = null)
+    private function isIgnoredPath(UrlPathInterface $requestPath, UrlPathInterface &$ignorePath = null): bool
     {
         foreach ($this->ignorePaths as $ignorePath) {
             $isMatch = $ignorePath->isDirectory() ?
@@ -214,7 +203,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return string The result as JSON.
      */
-    private function doValidate($contentType, $content)
+    private function doValidate(string $contentType, string $content): string
     {
         $curl = curl_init();
 
@@ -240,7 +229,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return string The error page content.
      */
-    private static function createErrorPageContent(array $validationResult, $content)
+    private static function createErrorPageContent(array $validationResult, string $content): string
     {
         $result = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>HTML validation failed</title></head><body><h1>HTML validation failed</h1><ul>';
 
@@ -250,14 +239,14 @@ class HtmlValidatorPlugin extends AbstractPlugin
             $lastLine = isset($validationItem['lastLine']) ? $validationItem['lastLine'] : 0;
             $message = isset($validationItem['message']) ? $validationItem['message'] : '';
 
-            $result .= '<li>' . htmlentities($type) . ': line ' . htmlentities($firstLine !== 0 ? $firstLine . '-' . $lastLine : $lastLine) . ': ' . htmlentities($message) . '</li>';
+            $result .= '<li>' . htmlentities($type) . ': line ' . htmlentities(strval($firstLine !== 0 ? $firstLine . '-' . $lastLine : $lastLine)) . ': ' . htmlentities($message) . '</li>';
         }
 
         $result .= '</ul><h2>Source</h2><pre>';
 
         $line = 1;
         foreach (preg_split("/\r\n|\n|\r/", $content) as $contentLine) {
-            $result .= str_pad($line++, 3, ' ', STR_PAD_LEFT) . ' ' . htmlentities($contentLine) . '<br />';
+            $result .= str_pad(strval($line++), 3, ' ', STR_PAD_LEFT) . ' ' . htmlentities($contentLine) . '<br />';
         }
 
         $result .= '</pre></body></html>';
@@ -273,7 +262,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return FilePathInterface The path to the cache file.
      */
-    private static function getCacheFilename(FilePathInterface $tempDir, $checksum)
+    private static function getCacheFilename(FilePathInterface $tempDir, string $checksum): FilePathInterface
     {
         $directory = $tempDir->withFilePath(FilePath::parse('michaelhall' . DIRECTORY_SEPARATOR . 'html-validator-plugin' . DIRECTORY_SEPARATOR));
         if (!is_dir($directory->__toString())) {
