@@ -85,7 +85,7 @@ class HtmlValidatorPlugin extends AbstractPlugin
      *
      * @return bool True if request should stop processing, false otherwise.
      */
-    public function onPostRequest(ApplicationInterface $application, RequestInterface $request, ResponseInterface $response)
+    public function onPostRequest(ApplicationInterface $application, RequestInterface $request, ResponseInterface $response): bool
     {
         parent::onPostRequest($application, $request, $response);
 
