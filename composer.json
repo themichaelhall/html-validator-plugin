@@ -19,12 +19,12 @@
   "require": {
     "php": ">=7.1",
     "ext-curl": "*",
-    "bluemvc/bluemvc-core": "dev-develop",
-    "datatypes/datatypes": "~1.2||~2.0"
+    "bluemvc/bluemvc-core": "^2.0",
+    "datatypes/datatypes": "^1.2||^2.0"
   },
   "require-dev": {
-    "bluemvc/bluemvc-fakes": "dev-develop",
-    "phpunit/phpunit": "~5.5||~6.0||~7.0"
+    "bluemvc/bluemvc-fakes": "^2.0",
+    "phpunit/phpunit": "^5.5||^6.0||^7.0"
   },
   "autoload": {
     "psr-4": {
