@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MichaelHall\HtmlValidatorPlugin\Tests;
 
 use BlueMvc\Core\Http\StatusCode;
@@ -150,7 +152,7 @@ class HtmlValidatorPluginTest extends TestCase
      * @param string $requestPath                        The request path.
      * @param string $expectedXHtmlValidatorPluginHeader The expected X-Html-Validator-Plugin header.
      */
-    public function testWithIgnoredPaths($requestPath, $expectedXHtmlValidatorPluginHeader)
+    public function testWithIgnoredPaths(string $requestPath, string $expectedXHtmlValidatorPluginHeader)
     {
         $htmlValidatorPlugin = new HtmlValidatorPlugin();
         $htmlValidatorPlugin->addIgnorePath('foo/');
@@ -190,18 +192,6 @@ class HtmlValidatorPluginTest extends TestCase
     }
 
     /**
-     * Test addIgnorePath with invalid parameter type.
-     *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage The $ignorePath parameter is not a string.
-     */
-    public function testAddIgnorePathWithInvalidParameterType()
-    {
-        $plugin = new HtmlValidatorPlugin();
-        $plugin->addIgnorePath(true);
-    }
-
-    /**
      * Test with failed result from validator.
      */
     public function testWithFailedResultFromValidator()
@@ -219,17 +209,6 @@ class HtmlValidatorPluginTest extends TestCase
         self::assertContains('<h1>HTML validation failed</h1>', $response->getContent());
         self::assertContains('<li>error: line 0: Error contacting validator.</li>', $response->getContent());
         self::assertContains('<h2>Source</h2><pre>  1 &lt;!DOCTYPE html&gt;<br />  2 &lt;html lang=&quot;en&quot;&gt;<br />  3 &lt;head&gt;<br />  4 &lt;title&gt;A valid test page&lt;/title&gt;&lt;/head&gt;<br />  5 <br />  6 &lt;/html&gt;<br /></pre>', $response->getContent());
-    }
-
-    /**
-     * Test constructor with invalid parameter type.
-     *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage The $validatorUrl parameter is not a string.
-     */
-    public function testConstructorWithInvalidParameterType()
-    {
-        new HtmlValidatorPlugin(100);
     }
 
     /**
