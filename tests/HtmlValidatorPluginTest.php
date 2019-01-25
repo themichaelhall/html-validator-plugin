@@ -254,6 +254,8 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function setUp()
     {
+        parent::setUp();
+
         $this->myApplication = new FakeApplication();
         $this->myApplication->setDebug(true);
         $this->myApplication->addRoute(new Route('', TestController::class));
@@ -264,6 +266,8 @@ class HtmlValidatorPluginTest extends TestCase
      */
     public function tearDown()
     {
+        parent::tearDown();
+
         $this->myApplication = null;
     }
 
