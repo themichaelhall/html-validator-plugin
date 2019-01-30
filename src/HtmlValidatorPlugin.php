@@ -16,7 +16,10 @@ use BlueMvc\Core\Interfaces\ResponseInterface;
 use DataTypes\FilePath;
 use DataTypes\Interfaces\FilePathInterface;
 use DataTypes\Interfaces\UrlPathInterface;
+use DataTypes\Url;
 use DataTypes\UrlPath;
+use MichaelHall\HttpClient\HttpClient;
+use MichaelHall\HttpClient\HttpClientRequest;
 
 /**
  * HTML validator plugin.
@@ -205,20 +208,16 @@ class HtmlValidatorPlugin extends AbstractPlugin
      */
     private function doValidate(string $contentType, string $content): string
     {
-        $curl = curl_init();
+        $httpClient = new HttpClient();
 
-        curl_setopt($curl, CURLOPT_URL, $this->validatorUrl);
-        curl_setopt($curl, CURLOPT_USERAGENT, 'HtmlValidatorPlugin/1.0 (+https://github.com/themichaelhall/html-validator-plugin)');
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: ' . $contentType]);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $request = new HttpClientRequest(Url::parse($this->validatorUrl), 'POST');
+        $request->addHeader('User-Agent: HtmlValidatorPlugin/1.1 (+https://github.com/themichaelhall/html-validator-plugin)');
+        $request->addHeader('Content-Type: ' . $contentType);
+        $request->setRawContent($content);
 
-        $result = curl_exec($curl);
+        $response = $httpClient->send($request);
 
-        curl_close($curl);
-
-        return $result !== false ? $result : '{"messages":[{"type":"error","message":"Error contacting validator."}]}';
+        return $response->isSuccessful() ? $response->getContent() : '{"messages":[{"type":"error","message":"Error contacting validator."}]}';
     }
 
     /**

@@ -20,9 +20,9 @@
   "require": {
     "php": ">=7.1",
     "ext-json": "*",
-    "ext-curl": "*",
     "bluemvc/bluemvc-core": "^2.0",
-    "datatypes/datatypes": "^1.2||^2.0"
+    "datatypes/datatypes": "^1.2||^2.0",
+    "michaelhall/http-client": "^1.0"
   },
   "require-dev": {
     "bluemvc/bluemvc-fakes": "^2.0",
